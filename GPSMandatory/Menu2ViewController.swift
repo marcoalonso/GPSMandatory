@@ -7,12 +7,15 @@
 
 import UIKit
 import Combine
+import CoreLocation
+import MapKit
 
 class Menu2ViewController: UIViewController {
 
     var locationVM = LocationViewModel.shared
     var tokens: Set<AnyCancellable> = []
     var coordenadas : (lat: Double, lon: Double) = (0,0)
+    lazy var geocoder = CLGeocoder()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,6 +46,27 @@ class Menu2ViewController: UIViewController {
 
     }
     
+    func reverseGeocoding(with location: CLLocation) {
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            if let placemarks = placemarks, let placemark = placemarks.first {
+                print("Debug: placemark \(placemark.name)")
+                print("Debug: placemark \(placemark.thoroughfare)")
+                print("Debug: placemark \(placemark.locality)")
+                print("Debug: placemark \(placemark.postalCode)")
+                print("Debug: placemark \(placemark.subThoroughfare)")
+                print("Debug: placemark \(placemark.subLocality)")
+                print("Debug: placemark \(placemark.subAdministrativeArea)")
+                
+                let alerta = UIAlertController(title: "DIRECCION", message: placemark.compactAddress, preferredStyle: .alert)
+                let accionAceptar = UIAlertAction(title: "OK", style: .default) { _ in
+                    //Do something
+                }
+                alerta.addAction(accionAceptar)
+                self.present(alerta, animated: true)
+            }
+        }
+    }
+    
     func observeCoordinateUpdates(){
         locationVM.coordinatesPublisher.receive(on: DispatchQueue.main)
             .sink { completion in
@@ -50,8 +74,11 @@ class Menu2ViewController: UIViewController {
             } receiveValue: { coordenadas in
                 self.coordenadas = (coordenadas.latitude, coordenadas.longitude)
                 print("Debug: latitude \(coordenadas.latitude) longitude \(coordenadas.longitude)")
+                let location = CLLocation(latitude: coordenadas.latitude, longitude: coordenadas.longitude)
+                self.reverseGeocoding(with: location)
             }.store(in: &tokens)
     }
+  
     
     func observeDeniedLocationAccess() {
         locationVM.deniedLocationAccessPublisher
@@ -69,4 +96,30 @@ class Menu2ViewController: UIViewController {
     }
 
 
+}
+
+extension CLPlacemark {
+    
+    var compactAddress: String? {
+        if let name = name {
+            var result = name
+            
+            if let street = thoroughfare {
+                result += ", \(street)"
+            }
+            
+            if let city = locality {
+                result += ", \(city)"
+            }
+            
+            if let country = country {
+                result += ", \(country)"
+            }
+            
+            return result
+        }
+        
+        return nil
+    }
+    
 }
