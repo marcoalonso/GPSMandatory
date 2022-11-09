@@ -58,6 +58,7 @@ class AlertaViewController: UIViewController {
             UIApplication.shared.open(settingsUrl, completionHandler: { (success) in
             })
         }
+        self.dismiss(animated: true)
     }
     
     @IBAction func cancelarButton(_ sender: UIButton) {
